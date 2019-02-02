@@ -5,6 +5,10 @@ require_once('./classes/App.php');
 $message = "";
 $error = false;
 
+$client = App::create_client();
+App::check_if_token_file_exists($client);
+App::check_if_token_file_expired($client);
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST'){
 
     $email = $_POST['email'];
@@ -23,17 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     date_modify($datetime_end,"+30 minutes");
     $datetime_end_formated = $datetime_end->format(\DateTime::RFC3339);
 
-    $client = App::create_client();
-    App::check_if_token_file_exists($client);
-    App::check_if_token_file_expired($client);
-
     $service = new Google_Service_Calendar($client);
 
-
-     $event = new Google_Service_Calendar_Event(array(
+    $event = new Google_Service_Calendar_Event(array(
          'summary' => $name,
          'location' => 'Beograd',
-         'description' => $note,
+         'description' => $note . "<br>" .$phone,
          'visibility' => 'public',
          'sendUpdates' => 'all',
          'sendNotifications' => true, 
@@ -58,33 +57,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
        ));
        $sendNotifications = array('sendNotifications' => true);
 
+     try{
+        $event = $service->events->insert(CALENDAR_ID, $event,$sendNotifications);
+        $message = "Google calendar event has been successfuly created!";
+     }
+     catch(Exception $e){
+        $errors = $e->getErrors();
+        $authUrl = $client->createAuthUrl();
 
-     $event = $service->events->insert(CALENDAR_ID, $event,$sendNotifications);
-     $message = "Google calendar event has been successfuly created!";
+        foreach($errors as $error){
+            $message.= $error['message'] .'<br>';
+        }
+        $message .= "GET NEW TOKEN:<a href='".$authUrl."'>REFRESH TOKEN</a>";
+        $error = true;
 
-
-    // $optParams = array(
-    //     'maxResults' => 10,
-    //     'orderBy' => 'startTime',
-    //     'singleEvents' => true,
-    //     'timeMin' => date('c'),
-    // );
-
-    // $results = $service->events->listEvents(CALENDAR_ID);
-    // $events = $results->getItems();
-    // if (empty($events)) {
-    //     print "No upcoming events found.\n";
-    // } else {
-    //     print "Upcoming events:\n";
-    //     foreach ($events as $event) {
-    //         $start = $event->start->dateTime;
-    //         if (empty($start)) {
-    //             $start = $event->start->date;
-    //         }
-    //         printf("%s (%s)\n", $event->getSummary(), $start);
-    //     }
-    // }
-
+     }
 
 }
 ?>
@@ -99,13 +86,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
      integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css" />
-
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
 </head>
 <body>
  
     <div class="container">
-        <div class="message-wrapper">
+        <div class="message-wrapper pt-5">
             <?php
                 if(isset($message) && $message != ''){
                     if($error != ''){
