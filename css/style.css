@@ -1,0 +1,24 @@
+.form-group.required label:before{
+    color: red;
+    content: "*";
+    position: absolute;
+    margin-left: -15px;
+}
+.error {
+    color: red;
+    margin-left: 5px;
+}
+ #captcha span{
+     width: 44px;
+     display:block;
+     float:left;
+     padding-top:5px;
+}
+#captcha input{
+    background: url(http://img3.uploadhouse.com/fileuploads/17737/17737011310213e71805ecf2292144cbbecf42ad.png) no-repeat scroll 0 0 transparent;
+    margin: 5px 0 0;
+    padding: 0;
+    border: medium none;
+    cursor: pointer;
+    width: 15px;
+}
